@@ -16,12 +16,13 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 
 # STRETCH GOALS
-# instead of getting 3 and hoping one is lgli, recursive that gets next result somehow until lgli link
+# instead of getting n and hoping one is lgli, recursive that gets next result somehow until lgli link
+# custom filetype by title, or option to remove filetype setting altogether
 # kindle just needs to be plug and played; it automatically exits koreader if koreader is open and THEN starts the script
 
-# Default download path -> ./assets/{book}
+# Default download path is ./titles
 C_DIR = os.path.dirname(os.path.realpath(__file__))
-DL_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
+DL_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'titles')
 
 #default values
 src = "/titles"
@@ -33,16 +34,24 @@ if Path(f'{C_DIR}/config.json').is_file():
     # Read config file to determine if path is set
     with open(f'{C_DIR}/config.json', 'r') as f:
         config = json.load(f)
-         
-        DL_PATH = config['destination'].strip()
-        src = config['source'].strip()
-        lang = config['language'].strip()
-        fileType = config['fileType'].strip().lower()
-        result_count = config['count']
+        
+        if config['destination']:
+            DL_PATH = config['destination'].strip()
+        
+        if config['source']:
+            src = config['source'].strip()
+        
+        if config['language']:
+            lang = config['language'].strip()
+
+        if config['fileType']:
+            fileType = config['fileType'].strip().lower()
+
+        if config['count']:
+            result_count = config['count']
 
 # Process the file containing 
-# Precondition: src_file is the name of a file containing a list of books, optionally followed by a comma 
-# and author on the same line 
+# Precondition: src_file is the name of a file containing a list of titles or title search terms
 def process_book_list(src_file):
     book_list = []
     with open(src_file, "r") as list:
@@ -159,10 +168,10 @@ iteration = 0
 for book in books:
     search = book
     if len(search) > 1:
-        search = book[0] + " " + book[1] # TODO remove this by replacing , with space earlier? 
+        search = book[0] + " " + book[1] # TODO remove this
     title = book[0]
 
-    print(f"\n === Searching for {title}... ===")
+    print(f"\n === Searching for '{title}'... ===")
 
     # Ensure download directory exists
     os.makedirs(DL_PATH, exist_ok=True)
@@ -198,14 +207,11 @@ for book in books:
     # Find book links using the correct selector from the HTML structure
     book_links = driver.find_elements(By.CSS_SELECTOR, 'a.js-vim-focus.custom-a')
 
-    #print(f"Found {len(book_links)} book links for {title}.")
-
     # Check if we have enough results
     if len(book_links) < result_count:
         result_count = len(book_links)
         print(f"Only {result_count} results found.")
 
-    # TODO currently only fails if no results appear, but could fail in many other cases.
     if result_count == 0:
         print(f"FAILURE: No results found for {title}. Please check your search query. Continuing execution...")
         failed_titles.append(title)
@@ -240,6 +246,8 @@ for book in books:
                         
             # Extract all text from the container for debugging
             all_text = container.text
+
+            #TODO: decide if want to do anything with this information
             
             # Extract author - look for any link that contains author info
             author = "Unknown"
@@ -257,9 +265,7 @@ for book in books:
                             break
             except Exception as e:
                 print(f"\t  Error extracting author: {e}")
-            
-            #print(f"\tAuthor: {author}")
-            
+                        
             # Extract year/publisher from text
             publisher = "Unknown"
             try:
@@ -271,8 +277,6 @@ for book in books:
             except Exception as e:
                 print(f"\t  Error extracting year: {e}")
                 
-            #print(f"\tYear: {publisher}")
-
             # Extract metadata from text
             language = "Unknown"
             file_format = "Unknown" 
@@ -306,23 +310,19 @@ for book in books:
                 print(f"\t  Error extracting metadata: {e}")
 
             if server == "Unknown":
-                #print(f"First result is not a Libgen URL. Moving to next result...")
                 continue
             else:
-                #print(f"This result has a Libgen URL. {server}")
                 break #if found a libgen link, just stop going through titles
 
-            
             # Debug: print some of the raw text if needed
             # if i == 0:  # Print debug info for first result
             #     print(f"\t  Debug - Container text preview: {all_text[:200]}...")
             
         except Exception as e:
             print(f"\n[{i+1}] Error extracting info for book {i+1}: {e}")
-            # Print at least the title if we can get it
+            # Get at least the title
             try:
                 title = book_links[i].text.strip()
-                #print(f"\tTitle: {title}")
             except:
                 print(f"\tCould not extract title")
 
