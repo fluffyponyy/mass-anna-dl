@@ -15,15 +15,8 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 
-# REQUIREMENTS
-# No download selection: that is automatic
-# config json for picking language, name of source file, name of destination folder/path on kindle, file type
-# source file: .txt list of Book Title(, Author) which is optional
-# Prints to console each successful download and the full title and details of the successful download
-# If failure, print FAILURE and continue
-# At end, print number of and successful percentage of downloads, total time taken, and line from .txt that failed
-
 # STRETCH GOALS
+# instead of getting 3 and hoping one is lgli, recursive that gets next result somehow until lgli link
 # kindle just needs to be plug and played; it automatically exits koreader if koreader is open and THEN starts the script
 
 # Default download path -> ./assets/{book}
@@ -31,10 +24,10 @@ C_DIR = os.path.dirname(os.path.realpath(__file__))
 DL_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
 
 #default values
-src = ""
+src = "/titles"
 lang = "English"
 fileType = "EPUB"
-result_count = 5
+result_count = 3
 
 if Path(f'{C_DIR}/config.json').is_file():
     # Read config file to determine if path is set
@@ -70,6 +63,7 @@ def dlwait(path):
     in the given path. If the function starts before the download, it won't wait for its completion.'''
     start_time = time.time()
     dl_wait = True
+    print("Downloading...")
     
     while dl_wait:
         time.sleep(1) # Precision
@@ -204,7 +198,7 @@ for book in books:
     # Find book links using the correct selector from the HTML structure
     book_links = driver.find_elements(By.CSS_SELECTOR, 'a.js-vim-focus.custom-a')
 
-    print(f"Found {len(book_links)} book links for {title}.")
+    #print(f"Found {len(book_links)} book links for {title}.")
 
     # Check if we have enough results
     if len(book_links) < result_count:
@@ -243,9 +237,7 @@ for book in books:
             except:
                 # If we can't find the container, use the book_link's immediate parent
                 container = book_link.find_element(By.XPATH, "../..")
-            
-            print(f"\n[{i+1}] {title}")
-            
+                        
             # Extract all text from the container for debugging
             all_text = container.text
             
@@ -266,7 +258,7 @@ for book in books:
             except Exception as e:
                 print(f"\t  Error extracting author: {e}")
             
-            print(f"\tAuthor: {author}")
+            #print(f"\tAuthor: {author}")
             
             # Extract year/publisher from text
             publisher = "Unknown"
@@ -279,12 +271,13 @@ for book in books:
             except Exception as e:
                 print(f"\t  Error extracting year: {e}")
                 
-            print(f"\tYear: {publisher}")
+            #print(f"\tYear: {publisher}")
 
             # Extract metadata from text
             language = "Unknown"
             file_format = "Unknown" 
             file_size = "Unknown"
+            server = "Unknown"
             
             try:
                 import re
@@ -303,30 +296,40 @@ for book in books:
                 size_match = re.search(r'(\d+\.?\d*\s*[MKG]B)', all_text, re.IGNORECASE)
                 if size_match:
                     file_size = size_match.group(1)
+
+                # Extract server; uses this to fetch a LibGen (lgli) link
+                server_match = re.search(r'(?<![A-Za-z0-9])/lgli/[A-Za-z0-9]', all_text, re.IGNORECASE)
+                if server_match:
+                    server = server_match.group(0)
                     
             except Exception as e:
                 print(f"\t  Error extracting metadata: {e}")
 
-            print(f"\tLanguage: {language}")
-            print(f"\tFormat: {file_format}, Size: {file_size}")
+            if server == "Unknown":
+                #print(f"First result is not a Libgen URL. Moving to next result...")
+                continue
+            else:
+                #print(f"This result has a Libgen URL. {server}")
+                break #if found a libgen link, just stop going through titles
+
             
             # Debug: print some of the raw text if needed
-            if i == 0:  # Print debug info for first result
-                print(f"\t  Debug - Container text preview: {all_text[:200]}...")
+            # if i == 0:  # Print debug info for first result
+            #     print(f"\t  Debug - Container text preview: {all_text[:200]}...")
             
         except Exception as e:
             print(f"\n[{i+1}] Error extracting info for book {i+1}: {e}")
             # Print at least the title if we can get it
             try:
                 title = book_links[i].text.strip()
-                print(f"\tTitle: {title}")
+                #print(f"\tTitle: {title}")
             except:
                 print(f"\tCould not extract title")
 
     try:
         # auto download book here
 
-        driver.get(sresults[0]) # always default to first result
+        driver.get(sresults[i]) # try first book
         
         # Wait for page to load
         time.sleep(2)
@@ -399,8 +402,6 @@ for book in books:
                         except NoSuchElementException:
                             continue
 
-                print(f"Downloading ...")
-
                 dl_time = dlwait(DL_PATH)
 
                 print(f'SUCCESS: Successfully downloaded {title} in {dl_time} seconds.')
@@ -409,14 +410,14 @@ for book in books:
 
                 success += 1
             
-            #TODO make this a failure case
             except Exception as e:
-                print(f"Error with libgen download: {e}")
-                print("Falling back to manual link selection...")
+                print(f"FAILURE: Error with libgen download: {e}")
+                print(f"Continuing execution...")
+                failed_titles.append(title)
+                continue
         
         if 'libgen' not in page_text or 'Error with libgen download:' in str(locals()):
             print("ERROR: libgen.li link not found or failed.")
-            print("The following links require human verification.")
             time.sleep(2)
 
             # Find all download links
@@ -465,7 +466,7 @@ for book in books:
 
 driver.quit()
 print ("\n =============================== ")
-print(f"\n Successfully downloaded {success} / {book_count} ({success//book_count}%) titles in {total_time} seconds. ")
+print(f"\n Successfully downloaded {success} / {book_count} ({round((success/book_count)*100)}%) titles in {total_time} seconds. ")
 if success < book_count:
     for title in failed_titles:
         print(f"Failure {i}: {title} did not download")
