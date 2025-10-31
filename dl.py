@@ -16,8 +16,8 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 
 # STRETCH GOALS
-# instead of getting n and hoping one is lgli, recursive that gets next result somehow until lgli link
-# custom filetype by title, or option to remove filetype setting altogether
+# custom filetype by title, or option to remove filetype setting altogether (might not be needed?)
+# overall time is more accurate, and not just download time perhaps
 # kindle just needs to be plug and played; it automatically exits koreader if koreader is open and THEN starts the script
 
 # Default download path is ./titles
@@ -56,13 +56,7 @@ def process_book_list(src_file):
     book_list = []
     with open(src_file, "r") as list:
         for line in list:
-            entry_list = []
-            entry = line.split(',')
-
-            for item in entry:
-                entry_list.append(item.strip())
-
-            book_list.append(entry_list)
+            book_list.append(line.strip())
     return book_list 
 
 
@@ -167,9 +161,7 @@ iteration = 0
 
 for book in books:
     search = book
-    if len(search) > 1:
-        search = book[0] + " " + book[1] # TODO remove this
-    title = book[0]
+    title = search
 
     print(f"\n === Searching for '{title}'... ===")
 
@@ -213,8 +205,8 @@ for book in books:
         print(f"Only {result_count} results found.")
 
     if result_count == 0:
-        print(f"FAILURE: No results found for {title}. Please check your search query. Continuing execution...")
-        failed_titles.append(title)
+        print(f"FAILURE: No results found for '{search}'. Please check your search query. Continuing execution...")
+        failed_titles.append(search)
         continue
 
     # add links to the array of search results
@@ -469,4 +461,4 @@ print ("\n =============================== ")
 print(f"\n Successfully downloaded {success} / {book_count} ({round((success/book_count)*100)}%) titles in {total_time} seconds. ")
 if success < book_count:
     for title in failed_titles:
-        print(f"Failure {i}: {title} did not download")
+        print(f"Failure {i+1}: '{title}' did not download")
