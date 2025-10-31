@@ -1,12 +1,20 @@
 # Mass Anna's Archive downloader
+
 Python tool for turning a list of work titles into downloads.
 
 Base Selenium code from https://github.com/Nquxii/anna-dl
 
 # Usage
+
+To get requirements:
+`pip install -r requirements.txt`
+
+then
+
 `python dl.py`
 
 ## Features
+
 - Automatically downloads titles in a .txt file into location of choice
 - Proceeds with other titles if one download fails
 - Configurations available in `config.json`:
@@ -17,6 +25,7 @@ Base Selenium code from https://github.com/Nquxii/anna-dl
   - `count`: Number of search results to check for LibGen links; default is `3`. Keep in mind that not every title may have a LibGen link within this number of results, or even at all.
 
 ## Format for `booklist.txt`
+
 Norwegian Wood
 
 or
