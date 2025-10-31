@@ -1,0 +1,3 @@
+iso639_lang==2.6.3
+selenium==4.38.0
+webdriver_manager==4.0.2
