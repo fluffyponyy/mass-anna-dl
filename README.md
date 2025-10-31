@@ -1,5 +1,6 @@
 # Mass Anna's Archive downloader
 Python tool for turning a list of work titles into downloads.
+
 Base Selenium code from https://github.com/Nquxii/anna-dl
 
 # Usage
@@ -13,6 +14,7 @@ Base Selenium code from https://github.com/Nquxii/anna-dl
   - `source`: Relative location for .txt file; default `booklist.txt`
   - `language`: Language to filter by; default `English`
   - `fileType`: Filetype to filter for; default `EPUB`; options include any valid Anna's Archive type, such as `MOBI`, `PDF`, `html`
+  - `count`: Number of files to check for LibGen links; default is `3`. Keep in mind that not every title may have a LibGen link within this number of results, or even at all.
 
 ## Format for `booklist.txt`
 Norwegian Wood
@@ -23,5 +25,6 @@ Norwegian Wood, Haruki Murakami
 
 or
 
-Norwegian Wood, Murakami
+murakami norwegian wood
 
+Each line is one search term.
