@@ -1,6 +1,6 @@
 # Mass Anna's Archive downloader
 
-Python tool for turning a list of work titles into downloads.
+Python tool for turning a list of work titles into downloads from Anna's Archive.
 
 Base Selenium code from https://github.com/Nquxii/anna-dl
 
