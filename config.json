@@ -1,7 +1,7 @@
 {
     "language": "English",
     "source": "booklist.txt",
-    "destination": "D:\\documents\\Reading\\script-test",
+    "destination": "/titles",
     "fileType": "EPUB",
     "count": 3
 }
